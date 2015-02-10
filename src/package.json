@@ -1,0 +1,20 @@
+{
+  "name": "sfdc-exportjs",
+  "description": "The export tool for Salesforce.com",
+  "version": "0.0.1",
+  "keywords": [
+    "force.com",
+    "Salesforce"
+  ],
+  "author": {
+    "name": "Makoto Tajitsu",
+    "email": "makoto_tajitsu@hotmail.co.jp",
+    "web": "http://freedom-man.com/blog/"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1.7",
+    "date-utils": "^1.2.16",
+    "jsforce": "^1.3.1",
+    "async": "~0.9.0"
+  }
+}
