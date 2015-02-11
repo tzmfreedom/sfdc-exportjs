@@ -1,3 +1,3 @@
 #!/bin/bash
 
-nodejs export.js 1>>$OUTPUT_DIR/out.log 2>>$OUTPUT_DIR/error.log
+nodejs export.js 1>>/var/log/sfdc-exportjs/out.log 2>>/var/log/sfdc-exportjs/error.log
