@@ -12,8 +12,9 @@ var PASSWORD = process.env.SFDC_PASSWORD;
 var LOGIN_URL = process.env.SFDC_LOGINURL ? process.env.SFDC_LOGINURL : 'https://login.salesforce.com';
 var TARGET_SOBJECTS = process.env.SFDC_TARGETOBJECT === "" ? [] : process.env.SFDC_TARGETOBJECT.split(";");
 var BUCKET = process.env.S3_BUCKET;
-var MODE = process.env.MODE ? process.env.MODE : "series";
+var MODE = process.env.MODE ? process.env.MODE : "serial";
 var OUTPUT_DIR = "/var/log/sfdc-exportjs";
+var CHUNK_SIZE = 5;
 
 logger.log("Target Object: " + TARGET_SOBJECTS.join(","));
 
@@ -25,7 +26,7 @@ conn.login(USERNAME, PASSWORD, function(err, userInfo) {
   logger.log("Login is successful.")
   
   var prefix = new Date().toFormat("YYYYMMDD");
-  if (MODE == 'series') {
+  if (MODE == 'serial') {
     async.eachSeries(TARGET_SOBJECTS, function(targetSObject, next){
       extract(targetSObject, prefix, next);
     }, function(err){
@@ -36,9 +37,32 @@ conn.login(USERNAME, PASSWORD, function(err, userInfo) {
       }
     });
   } else if (MODE == 'parallel') {
-    async.each(TARGET_SOBJECTS, function(targetSObject, next){
-      extract(targetSObject, prefix, next);
-    }, function(err){
+    // split target objects to create chunks.
+    var chunks = [];
+    var chunk = [];
+    TARGET_SOBJECTS.forEach(function(targetSObject){
+      chunk.push(targetSObject);
+      if (chunk.length == CHUNK_SIZE) {
+        chunks.push(chunk);
+        chunk = [];
+      }
+    });
+    if (chunk.length > 0) {
+      chunks.push(chunk);
+    }
+    // loop for each chunk
+    async.eachSeries(chunks, function(chunk, chunk_next){
+      // look for each object
+      async.each(chunk, function(targetSObject, next){
+        extract(targetSObject, prefix, next);
+      }, function(err){
+        if (err) {
+          logger.error("Error is occured.");
+        }
+        chunk_next();
+      });
+    // callback when all chunk are completed.
+    }, function(err) {
       if (err) {
         logger.error("Error is occured.");
       } else {
